@@ -4,7 +4,7 @@
 
 1942
 
-driver by Paul Leaman
+Driver by Paul Leaman
 
 
 MAIN CPU:
