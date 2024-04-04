@@ -43,7 +43,7 @@ jobs:
       env:
         VERBOSE: 1
         NOWERROR: 1
-        ARCHOPTS: -S -fanalyzer
+        ARCHOPTS: -S -fanalyzer -Winvalid-pch
         TOOLS: 1
       run: make -j2
     - name: Validate
