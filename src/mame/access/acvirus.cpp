@@ -2,9 +2,7 @@
 // copyright-holders:R. Belmont
 /***************************************************************************
 
-    acvirus.cpp - Access Virus series
-
-    Skeleton driver by R. Belmont
+    Access Virus series
 
     Hardware in brief:
         Virus A: SAB 80C535-N    (12 MHz), DSP56303 @ 66 MHz
