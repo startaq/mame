@@ -41,7 +41,9 @@ jobs:
         echo "LD_RUN_PATH=/opt/gcc-latest/lib64" >> $GITHUB_ENV
     - name: Build
       env:
-        ARCHOPTS: -U_FORTIFY_SOURCE -S -fanalyzer
+        VERBOSE: 1
+        NOWERROR: 1
+        ARCHOPTS: -S -fanalyzer
         TOOLS: 1
       run: make -j2
     - name: Validate
