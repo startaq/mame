@@ -1,0 +1,55 @@
+name: CI (Linux, GCC Snapshot)
+
+on:
+  push:
+    paths:
+    - '.github/workflows/**'
+    - '3rdparty/**'
+    - 'hash/**'
+    - 'scripts/**'
+    - 'src/**'
+    - 'COPYING'
+    - 'makefile'
+  pull_request:
+    paths:
+    - '.github/workflows/**'
+    - '3rdparty/**'
+    - 'hash/**'
+    - 'scripts/**'
+    - 'src/**'
+    - 'COPYING'
+    - 'makefile'
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux-gcc-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libasound2-dev libxinerama-dev libxi-dev qtbase5-dev qtbase5-dev-tools
+    - name: Install GCC Snapshot
+      run: |
+        wget http://kayari.org/gcc-latest/gcc-latest.deb
+        sudo dpkg -i gcc-latest.deb
+        rm gcc-latest.deb
+        echo "/opt/gcc-latest/bin" >> $GITHUB_PATH
+        echo "LD_RUN_PATH=/opt/gcc-latest/lib64" >> $GITHUB_ENV
+    - name: Build
+      env:
+        ARCHOPTS: -U_FORTIFY_SOURCE -S -fanalyzer
+        TOOLS: 1
+      run: make -j2
+    - name: Validate
+      run: ./mame -validate
+    - uses: actions/upload-artifact@master
+      with:
+        name: mame-linux-gcc-snapshot-${{ github.sha }}
+        path: |
+          mame
+          chdman
+          unidasm
