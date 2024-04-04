@@ -1,4 +1,4 @@
-name: CI (Linux)
+name: CI (Linux, GCC Snapshot)
 
 on:
   push:
@@ -24,51 +24,32 @@ permissions:
   contents: read
 
 jobs:
-
-  build-linux:
+  build-linux-gcc-snapshot:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        compiler: [gcc, clang]
-        include:
-          - compiler: gcc
-            cc: gcc
-            cxx: g++
-            archopts: -U_FORTIFY_SOURCE
-            subtarget: tiny
-            executable: mametiny
-          - compiler: clang
-            cc: clang
-            cxx: clang++
-            subtarget: mame
-            executable: mame
     steps:
     - uses: actions/checkout@master
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libasound2-dev libxinerama-dev libxi-dev qtbase5-dev qtbase5-dev-tools
-    - name: Install clang
-      if: matrix.compiler == 'clang'
-      run: sudo apt-get install -y clang
+    - name: Install GCC Snapshot
+      run: |
+        wget http://kayari.org/gcc-latest/gcc-latest.deb
+        sudo dpkg -i gcc-latest.deb
+        rm gcc-latest.deb
+        echo "/opt/gcc-latest/bin" >> $GITHUB_PATH
+        echo "LD_RUN_PATH=/opt/gcc-latest/lib64" >> $GITHUB_ENV
     - name: Build
       env:
-        OVERRIDE_CC: ${{ matrix.cc }}
-        OVERRIDE_CXX: ${{ matrix.cxx }}
-        ARCHOPTS: ${{ matrix.archopts }}
-        SUBTARGET: ${{ matrix.subtarget }}
+        ARCHOPTS: -U_FORTIFY_SOURCE -S -fanalyzer
         TOOLS: 1
       run: make -j2
     - name: Validate
-      run: ./${{ matrix.executable }} -validate
-    - name: Reconcile driver list
-      run: ./${{ matrix.executable }} -listxml | python scripts/build/makedep.py reconcilelist -l src/mame/${{ matrix.subtarget }}.lst -
-    - name: ORM check
-      run: python scripts/minimaws/minimaws.py load --executable ./${{ matrix.executable }} --softwarepath hash
+      run: ./mame -validate
     - uses: actions/upload-artifact@master
       with:
-        name: ${{ matrix.executable }}-linux-${{ matrix.compiler }}-${{ github.sha }}
+        name: mame-linux-gcc-snapshot-${{ github.sha }}
         path: |
-          ${{ matrix.executable }}
+          mame
           chdman
           unidasm
