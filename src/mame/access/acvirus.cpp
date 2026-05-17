@@ -309,7 +309,7 @@ void acvirus_state::virus_common(machine_config &config)
 	screen.set_visarea_full();
 	screen.set_palette("palette");
 
-	/* Actual device is LM16255 */
+	// Actual device is LM16255
 	HD44780(config, m_lcdc, 270000); // TODO: clock not measured, datasheet typical clock used
 	m_lcdc->set_lcd_size(2, 16);
 
