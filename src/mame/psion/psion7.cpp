@@ -211,22 +211,24 @@ uint16_t psion7_state::ads7843_r(offs_t offset)
 }
 
 
-//void psion7_state::update_amp()
-//{
-//	// TODO: MSC1192 speaker amplifier, can be put into standby to mute audio.
-//	static const float codec_volume[4] = { 1.0f, 0.75f, 0.5f, 0.25f };
-//
-//	if (m_amp_enable)
-//	{
-//		m_buzzer->set_output_gain(ALL_OUTPUTS, 1.0);
-//		m_codec->set_output_gain(ALL_OUTPUTS, codec_volume[m_volume]); // VOL
-//	}
-//	else
-//	{
-//		m_buzzer->set_output_gain(ALL_OUTPUTS, 0.0);
-//		m_codec->set_output_gain(ALL_OUTPUTS, 0.0);
-//	}
-//}
+#if 0
+void psion7_state::update_amp()
+{
+	// TODO: MSC1192 speaker amplifier, can be put into standby to mute audio.
+	constexpr float codec_volume[4] = { 1.0f, 0.75f, 0.5f, 0.25f };
+
+	if (m_amp_enable)
+	{
+		m_buzzer->set_output_gain(ALL_OUTPUTS, 1.0);
+		m_codec->set_output_gain(ALL_OUTPUTS, codec_volume[m_volume]); // VOL
+	}
+	else
+	{
+		m_buzzer->set_output_gain(ALL_OUTPUTS, 0.0);
+		m_codec->set_output_gain(ALL_OUTPUTS, 0.0);
+	}
+}
+#endif
 
 
 void psion7_state::s7_map(address_map &map)
@@ -392,7 +394,7 @@ void psion7_state::psion7(machine_config &config)
 	rs232_port_device &uart3(RS232_PORT(config, "uart3", default_rs232_devices, nullptr));
 	uart3.set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(debug_port));
 
-	//ADS7843(config, "adc", 0);
+	//ADS7843(config, "adc");
 
 	RAM(config, m_ram).set_default_size("16M").set_extra_options("32M");
 	NVRAM(config, "nvram", nvram_device::DEFAULT_NONE);

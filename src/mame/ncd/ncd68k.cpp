@@ -77,6 +77,8 @@
 #include "screen.h"
 #include "video/bt47x.h"
 
+#include "endianness.h"
+
 #define LOG_MCU     (1U << 1)
 
 //#define VERBOSE (LOG_GENERAL|LOG_MCU)
@@ -504,7 +506,7 @@ void ncd16_state::configure(machine_config &config)
 	m_screen->set_screen_update(FUNC(ncd16_state::screen_update));
 	m_screen->screen_vblank().set_inputline(m_maincpu, M68K_IRQ_5, HOLD_LINE);
 
-	BERT(config, m_bert, 0).set_memory(m_maincpu, AS_PROGRAM);
+	BERT(config, m_bert).set_memory(m_maincpu, AS_PROGRAM);
 
 	common(config);
 
@@ -541,7 +543,7 @@ void ncd17c_state::configure(machine_config &config)
 	// keyboard controller
 	M6805P2(config, m_mcu, 3'750'000);
 
-	// ethernet/
+	// ethernet
 	AM7990(config, m_lance, 20_MHz_XTAL / 2);
 	m_lance->intr_out().set_inputline(m_maincpu, M68K_IRQ_3).invert();
 	m_lance->dma_in().set(FUNC(ncd17c_state::lance_dma_r));

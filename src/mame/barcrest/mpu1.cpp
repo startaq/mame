@@ -36,7 +36,6 @@
 
 #include "emu.h"
 
-#include "awpvid.h"
 #include "fruitsamples.h"
 
 #include "cpu/m6800/m6800.h"
@@ -691,8 +690,7 @@ uint8_t mpu1_state::reel_pos_r(uint8_t reel)
 void mpu2_stepper_state::reel_w(int reel, uint8_t data)
 {
 	m_reels[reel]->update(data);
-	constexpr char reelnames[3][6] = { "reel1", "reel2", "reel3" };
-	awp_draw_reel(machine(), reelnames[reel], *m_reels[reel]);
+	m_reels[reel]->draw();
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER( mpu12_base_state::nmi )
@@ -1035,8 +1033,6 @@ INPUT_PORTS_END
 
 void mpu12_base_state::machine_start()
 {
-	m_lamps.resolve();
-
 	m_change_pia2a_bit7_timer = timer_alloc(FUNC(mpu1_state::change_pia2a_bit7), this);
 
 	save_item(NAME(m_lamp_relay));
@@ -1047,8 +1043,6 @@ void mpu12_base_state::machine_start()
 void mpu2_em_state::machine_start()
 {
 	mpu12_base_state::machine_start();
-
-	m_digits.resolve();
 }
 
 void mpu2_stepper_state::machine_start()
@@ -1070,8 +1064,7 @@ void mpu12_base_state::machine_reset()
 
 void mpu2_stepper_state::device_post_load()
 {
-	constexpr char reelnames[3][6] = { "reel1", "reel2", "reel3" };
-	for(int i = 0; i < 3; i++) awp_draw_reel(machine(), reelnames[i], *m_reels[i]);
+	for(int i = 0; i < 3; i++) m_reels[i]->draw();
 }
 
 void mpu12_base_state::mpu12_base(machine_config &config)

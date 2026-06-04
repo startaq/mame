@@ -44,6 +44,8 @@
 
 #include "speaker.h"
 
+#include <numbers>
+
 namespace {
 
 #include "bfm_blackbox.lh"
@@ -1633,10 +1635,6 @@ INPUT_PORTS_END
 
 void blackbox_base_state::machine_start()
 {
-	m_lamps.resolve();
-	m_digits.resolve();
-	m_test_led.resolve();
-
 	save_item(NAME(m_input_en));
 
 	std::fill(std::begin(m_input_en), std::end(m_input_en), false);
@@ -1672,7 +1670,7 @@ void blackbox_base_state::blackbox_base(machine_config &config)
 	m_pia->writepb_handler().set(FUNC(blackbox_base_state::pia_portb_w));
 	m_pia->cb2_handler().set_nop(); // Not connected
 
-	ACIA6850(config, m_acia, 0);
+	ACIA6850(config, m_acia);
 
 	FRUIT_SAMPLES(config, m_samples);
 }
@@ -1887,8 +1885,9 @@ void blackbox_em_21up_state::init_21up()
 {
 	for(int s = 0; s < 477; s++)
 	{
-		double wave = sin((2 * M_PI * 3500.0 * (double)s) / 48000.0);
-		double mod = sin((2 * M_PI * 50.0 * (double)s) / 48000.0);
+		constexpr double PI = std::numbers::pi;
+		double wave = sin((2 * PI * 3500.0 * (double)s) / 48000.0);
+		double mod = sin((2 * PI * 50.0 * (double)s) / 48000.0);
 		m_beep_sample_data[s] = 32767 * wave * mod;
 	}
 }
