@@ -30,7 +30,7 @@ The palette generator is 8 bits per color gun like the Taito F3 system.
 Like Metal Black the palette space is doubled, and the first half used
 for sprites only so the second half can be devoted to tilemaps.
 
-The main cpu is a 68000.
+The main CPU is a 68000.
 
 There is a slave Z80 which interfaces with a YM2610B for sound.
 Commands are written to it by the 68000 (as in the Taito F2 games).
@@ -733,8 +733,8 @@ void slapshot_state::driver_init()
 	m_gfxdecode->set_gfx(1, nullptr);
 }
 
-GAME( 1994, slapshot,  0,        slapshot, slapshot, slapshot_state, driver_init, ROT0, "Taito Corporation Japan",   "Slap Shot (Ver 3.0 O)",    MACHINE_SUPPORTS_SAVE ) // 7/1  12:00  Ver 3.0 O
-GAME( 1994, slapshotj, slapshot, slapshot, slapshot, slapshot_state, driver_init, ROT0, "Taito Corporation",         "Slap Shot (Ver 2.2 J)",    MACHINE_SUPPORTS_SAVE ) // 6/8  12:00  Ver 2.2 J
-GAME( 1994, opwolf3,   0,        opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito Corporation Japan",   "Operation Wolf 3 (World)", MACHINE_SUPPORTS_SAVE )
-GAME( 1994, opwolf3u,  opwolf3,  opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito America Corporation", "Operation Wolf 3 (US)",    MACHINE_SUPPORTS_SAVE )
-GAME( 1994, opwolf3j,  opwolf3,  opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito Corporation",         "Operation Wolf 3 (Japan)", MACHINE_SUPPORTS_SAVE )
+GAME( 1994, slapshot,  0,        slapshot, slapshot, slapshot_state, driver_init, ROT0, "Taito",         "Slap Shot (Ver 3.0 O)",    MACHINE_SUPPORTS_SAVE ) // 7/1  12:00  Ver 3.0 O
+GAME( 1994, slapshotj, slapshot, slapshot, slapshot, slapshot_state, driver_init, ROT0, "Taito",         "Slap Shot (Ver 2.2 J)",    MACHINE_SUPPORTS_SAVE ) // 6/8  12:00  Ver 2.2 J
+GAME( 1994, opwolf3,   0,        opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito",         "Operation Wolf 3 (World)", MACHINE_SUPPORTS_SAVE )
+GAME( 1994, opwolf3u,  opwolf3,  opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito America", "Operation Wolf 3 (US)",    MACHINE_SUPPORTS_SAVE )
+GAME( 1994, opwolf3j,  opwolf3,  opwolf3,  opwolf3,  slapshot_state, driver_init, ROT0, "Taito",         "Operation Wolf 3 (Japan)", MACHINE_SUPPORTS_SAVE )
