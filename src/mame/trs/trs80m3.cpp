@@ -364,7 +364,7 @@ void trs80m3_state::model3(machine_config &config)
 	m_maincpu->set_periodic_int(FUNC(trs80m3_state::rtc_interrupt), attotime::from_hz(20.2752_MHz_XTAL / 10 / 67584));
 
 	/* video hardware */
-	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen_device &screen(SCREEN(config, "screen"));
 	screen.set_raw(12.672_MHz_XTAL, 800, 0, 640, 264, 0, 240); // FIXME: these are Model 4 80-column parameters
 	screen.set_screen_update(FUNC(trs80m3_state::screen_update_trs80m3));
 	screen.set_palette("palette");
@@ -540,8 +540,10 @@ ROM_END
 
 ROM_START( cp500 )
 	ROM_REGION(0x4000, "maincpu", 0)
-	//ROM_REGION(0x4000, "bootrom", 0)
 	ROM_LOAD("s_8407_cn62516n_cp500a_prologica_83.ci111", 0x0000, 0x4000, CRC(c2fc1b92) SHA1(0eb07baee80f1ee1f28a609eb63a9245dcb68adb))
+
+	ROM_REGION(0x4000, "bootrom", 0)
+	ROM_COPY("maincpu", 0x0000, 0x0000, 0x4000)
 
 	ROM_REGION(0x0800, "chargen", 0)
 	ROM_LOAD( "100.105.ci36", 0x0000, 0x800, CRC(1765931e) SHA1(49176ceea6cc003efa04fad2f31829b9432fe10f))

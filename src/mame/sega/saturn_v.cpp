@@ -1153,12 +1153,12 @@ void saturn_state::drawpixel_generic(int x, int y, int patterndata, int offsetcn
 					}
 					break;
 				//case 4: /* Gouraud shading */
-				// TODO: Pro Yakyuu Team mo Tsukurou (during team creation, on PR girl select)
+				// TODO: proyakts (during team creation, on PR girl select)
 				//case 6:
 				//  break;
 				//case 7: /* Gouraud-shading + half-transparent */
-					// Lupin the 3rd Pyramid no Kenja enemy shadows
-					// Death Crimson lives indicators
+					// lupinpy enemy shadows
+					// deathcri lives indicators
 					// TODO: latter looks really bad.
 				default:
 					// TODO: mode 5: prohibited, mode 6: gouraud shading + half-luminance, mode 7: gouraud-shading + half-transparent
@@ -2123,11 +2123,13 @@ void saturn_state::vdp1_process_list()
 					break;
 
 				default:
+					// asenna 0x0c or 0x0d (transition from title screen)
+					// albodysj 0x0f (always)
 					popmessage ("VDP1: Sprite List Illegal %02x (%d)",current_sprite.CMDCTRL & 0xf,spritecount);
 					m_vdp1_legacy.lopr = (position * 0x20) >> 3;
 					//m_vdp1_legacy.copr = (position * 0x20) >> 3;
 					// prematurely kill the VDP1 process if an illegal opcode is executed
-					// Sexy Parodius calls multiple illegals and expects VDP1 irq to be fired anyway!
+					// sexyparo calls multiple illegals and expects VDP1 irq to be fired anyway!
 					goto end;
 			}
 		}
@@ -6750,7 +6752,7 @@ void saturn_state::vdp2_check_tilemap(bitmap_rgb32 &bitmap, const rectangle &cli
 		/* lengris3 bit 3 normal, bit 1 during battle field */
 		/* mslug bit 0 during gameplay */
 		/* bugu Sega Away Logo onward 0x470 */
-		/* cncu 0x0004 0xc000 */
+		/* cncu 0x0004 0xc000, azelpanztai 0x0004 0x0000 (FMV) */
 		if(VDP2_SFSEL & ~0x47f)
 			popmessage("Special Function Code Select enable %04x %04x",VDP2_SFSEL,VDP2_SFCODE);
 
