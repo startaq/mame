@@ -11,6 +11,11 @@
 class madam_device : public device_t
 {
 public:
+	static constexpr u32 ABT_ROMF = 0x0001;
+	static constexpr u32 ABT_ROMW = 0x0002;
+	static constexpr u32 ABT_CLIOT = 0x0004;
+	static constexpr u32 ABT_HARDU = 0x0008;
+
 	// construction/destruction
 	madam_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
 
@@ -29,6 +34,9 @@ public:
 	// for I/O
 	auto playerbus_read_cb()    { return m_playerbus_read_cb.bind(); }
 	auto irq_dply_cb()          { return m_irq_dply_cb.bind(); }
+	// DSPP DMA stack registers (channels 0-12 and 16-19), offset = channel * 4 + register
+	auto dspp_dma_read_cb()     { return m_dspp_dma_read_cb.bind(); }
+	auto dspp_dma_write_cb()    { return m_dspp_dma_write_cb.bind(); }
 
 	// init setter
 	void set_is_pal(bool is_pal) { m_is_pal = is_pal; }
@@ -39,6 +47,8 @@ public:
 	void vdlp_continue_w(int state);
 
 	void exp_dma_req_w(int state);
+
+	void abort_w(u32 bits) { m_abortbits |= bits; }
 
 protected:
 	// device-level overrides
@@ -56,6 +66,8 @@ private:
 	devcb_write_line m_irq_dexp_cb;
 	devcb_read32     m_playerbus_read_cb;
 	devcb_write_line m_irq_dply_cb;
+	devcb_read32     m_dspp_dma_read_cb;
+	devcb_write32    m_dspp_dma_write_cb;
 
 	uint32_t  m_revision = 0;       /* 03300000 */
 	uint32_t  m_msysbits = 0;       /* 03300004 */
@@ -86,7 +98,7 @@ private:
 	uint32_t  m_fence[4]{};         /* 03300200-0330023c (W); 03300200-0330027c (R) */
 	uint32_t  m_mmu[64]{};          /* 03300300-033003fc */
 	uint32_t  m_dma[32][4]{};       /* 03300400-033005fc */
-	uint32_t  m_mult[40]{};         /* 03300600-0330069c */
+	s32       m_mult[40]{};         /* 03300600-0330069c */
 	uint32_t  m_mult_control = 0;   /* 033007f0-033007f4 */
 	uint32_t  m_mult_status = 0;    /* 033007f8 */
 
@@ -157,13 +169,15 @@ private:
 		u32 address;
 		u32 current_ccb;
 		bool skip, last, ccbpre, packed, bgnd;
+		u8 pluta;
 		u32 next_ptr;
 		u32 source_ptr;
 		u32 plut_ptr;
-		s32 xpos, ypos;
-		s32 hdx, hdy, vdx, vdy;
-		u32 hddx, hddy;
+		double xpos, ypos;
+		double hdx, hdy, vdx, vdy;
+		double hddx, hddy;
 		u32 pixc, pre0, pre1;
+		u8 pixc_df[2];
 		std::vector<u16> buffer;
 	} m_cel;
 
@@ -177,6 +191,8 @@ private:
 	u32 regctl0_r();
 	void regctl0_w(offs_t offset, u32 data, u32 mem_mask);
 
+	void mult_start_process_w(offs_t offset, u32 data, u32 mem_mask);
+
 	void cel_start_w(offs_t offset, u32 data, u32 mem_mask);
 	void cel_stop_w(offs_t offset, u32 data, u32 mem_mask);
 	void cel_continue_w(offs_t offset, u32 data, u32 mem_mask);
@@ -185,9 +201,12 @@ private:
 	typedef u16 (madam_device::*get_pixel_func)(int x, int y, u16 woffset);
 	static const get_pixel_func get_pixel_table[32 + 1];
 	u16 get_pixel_invalid(int x, int y, u16 woffset);
+	u16 get_pixel_1bpp_coded_lrform0(int x, int y, u16 woffset);
+	u16 get_pixel_2bpp_coded_lrform0(int x, int y, u16 woffset);
 	u16 get_pixel_4bpp_coded_lrform0(int x, int y, u16 woffset);
 	u16 get_pixel_6bpp_coded_lrform0(int x, int y, u16 woffset);
 	u16 get_pixel_8bpp_coded_lrform0(int x, int y, u16 woffset);
+	u16 get_pixel_8bpp_uncoded_lrform0(int x, int y, u16 woffset);
 	u16 get_pixel_16bpp_uncoded_lrform0(int x, int y, u16 woffset);
 	u16 get_pixel_16bpp_uncoded_lrform1(int x, int y, u16 woffset);
 	u16 get_pixel_packed(int x, int y, u16 woffset);
@@ -203,8 +222,12 @@ private:
 	static const fetch_rle_func fetch_rle_table[16];
 
 	std::tuple<u16, u32> get_unemulated(u32 ptr, u8 frac);
+	std::tuple<u16, u32> get_coded_1bpp(u32 ptr, u8 frac);
+	std::tuple<u16, u32> get_coded_2bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_4bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_6bpp(u32 ptr, u8 frac);
+	std::tuple<u16, u32> get_coded_8bpp(u32 ptr, u8 frac);
+	std::tuple<u16, u32> get_uncoded_8bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_coded_16bpp(u32 ptr, u8 frac);
 	std::tuple<u16, u32> get_uncoded_16bpp(u32 ptr, u8 frac);
 
