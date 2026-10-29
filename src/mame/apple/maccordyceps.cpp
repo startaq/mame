@@ -27,8 +27,7 @@
     to fully support PowerPC accelerators. But we can hack around that for now.
 
     Driver status:
-    Boots to Finder from the ATA hard disk.  TurboSCSI was not intended for PowerPC use and
-    a CD-ROM boot unsurprisingly hangs.
+    Boots to Finder from the ATA hard disk and from the internal SCSI CD-ROM.
 
     Machine IDs:
     pmac5200: 0x3258, 0x3259, 0x325C, 0x325D, 0x325E
@@ -86,6 +85,8 @@ public:
 
 	void init_pmac6200();
 
+	void pmac5200(machine_config &config);
+
 private:
 	required_device<ppc603_device> m_maincpu;
 	required_device<capella_device> m_capella;
@@ -106,10 +107,21 @@ private:
 		m_maincpu->set_input_line(INPUT_LINE_RESET, state);
 	}
 
+	void cuda_power_w(int state)
+	{
+		if (state)
+			machine().schedule_exit();
+	}
+
 	void nmi_irq(int state)
 	{
 		m_capella->nmi_w(state);
 	}
+
+
+	u32 id_r(offs_t offset, u32 mem_mask);
+
+	u32 m_model_id;
 };
 
 void pmac6200_state::machine_start()
@@ -124,6 +136,11 @@ void pmac6200_state::machine_reset()
 
 void pmac6200_state::init_pmac6200()
 {
+}
+
+uint32_t pmac6200_state::id_r(offs_t offset, uint32_t mem_mask)
+{
+	return m_model_id;
 }
 
 /***************************************************************************
@@ -143,6 +160,7 @@ void pmac6200_state::pmac6200_map(address_map &map)
 	map(0x00000000, 0xffffffff).m(m_f108, FUNC(f108_device::map));
 	map(0x00000000, 0xffffffff).m(m_video, FUNC(valkyrie_device::map));
 	map(0x50000000, 0x53ffffff).m(m_primetimeii, FUNC(primetime_device::map));
+	map(0x5ffffffc, 0x5fffffff).r(FUNC(pmac6200_state::id_r));
 
 	// SONIC ethernet is supposed to live here. for now, pretend it's not there
 	map(0x50f0a000, 0x50f0bfff).noprw();
@@ -154,8 +172,6 @@ void pmac6200_state::pmac6200_map(address_map &map)
 	map(0xffc00000, 0xffffffff).rom().region("bootrom64", 0);
 
 	map(0x00000000, 0xffffffff).m(m_capella, FUNC(capella_device::map));
-
-	map(0x5ffffffc, 0x5fffffff).lr32(NAME([](offs_t offset) { return 0xa55a3250; }));
 }
 
 static INPUT_PORTS_START( macadb )
@@ -163,37 +179,45 @@ INPUT_PORTS_END
 
 void pmac6200_state::pmac6200(machine_config &config)
 {
+	m_model_id = 0xa55a2250;
+
 	PPC603(config, m_maincpu, 75_MHz_XTAL);
-	m_maincpu->ppcdrc_set_options(PPCDRC_COMPATIBLE_OPTIONS);
-	m_maincpu->set_bus_frequency(XTAL(75_MHz_XTAL)); // FSB freq to Capella
+	// BUS_RETRY: TurboSCSI stalls the CPU until DRQ
+	m_maincpu->ppcdrc_set_options(PPCDRC_COMPATIBLE_OPTIONS | PPCDRC_BUS_RETRY);
+	m_maincpu->set_bus_frequency(75_MHz_XTAL / 2); // FSB freq to Capella
 	m_maincpu->set_addrmap(AS_PROGRAM, &pmac6200_state::pmac6200_map);
 	config.set_perfect_quantum(m_maincpu); // chimes of death without it
 
 	CAPELLA(config, m_capella, 75_MHz_XTAL);
 	m_capella->set_maincpu_tag("maincpu");
 
-	F108(config, m_f108, 75_MHz_XTAL / 2); // 68040 bus speed is 37.5 MHz, half of FSB frequency
+	F108(config, m_f108, 75_MHz_XTAL / 2); // 68040 bus speed is 37.5 MHz, same as the FSB
 	m_f108->set_maincpu_tag("maincpu");
 	m_f108->set_primetimeii_tag("primetimeii");
-	m_f108->set_rom_tag("bootrom");
 	m_f108->write_ata_irq().set(m_primetimeii, FUNC(primetimeii_device::ata_irq_w));
 
 	NSCSI_CONNECTOR(config, "f108:scsi:0", mac_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "f108:scsi:1", mac_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "f108:scsi:2", mac_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "f108:scsi:3", mac_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "f108:scsi:3").option_set("cdrom", NSCSI_CDROM_APPLE).machine_config(
+		[](device_t *device)
+		{
+			device->subdevice<cdda_device>("cdda")->add_route(0, "^^^primetimeii:speaker", 1.0, 0);
+			device->subdevice<cdda_device>("cdda")->add_route(1, "^^^primetimeii:speaker", 1.0, 1);
+		});
 	NSCSI_CONNECTOR(config, "f108:scsi:4", mac_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "f108:scsi:5", mac_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "f108:scsi:6", mac_scsi_devices, nullptr);
 
 	SOFTWARE_LIST(config, "hdd_list").set_original("mac_hdd");
+	SOFTWARE_LIST(config, "cd_list").set_original("mac_cdrom").set_filter("PPC603");
 
 	PRIMETIMEII(config, m_primetimeii, 75_MHz_XTAL / 2); // guessed
 	m_primetimeii->set_maincpu_tag("maincpu");
 	m_primetimeii->set_scsi_tag("f108:ncr53c96");
 	m_primetimeii->set_capella_tag("capella");
 
-	VALKYRIE(config, m_video, C32M); // TODO: confirm on real hardware
+	VALKYRIE(config, m_video, C32M);
 	m_video->write_irq().set(m_primetimeii, FUNC(primetime_device::via2_irq_w<0x40>));
 
 	ADB_BUS(config, m_adbbus);
@@ -203,6 +227,7 @@ void pmac6200_state::pmac6200(machine_config &config)
 	CUDA_V2XX(config, m_cuda, XTAL(32'768));
 	m_cuda->zero_default_pram();
 	m_cuda->set_default_bios_tag("341s0060");
+	m_cuda->poweroff_callback().set(FUNC(pmac6200_state::cuda_power_w));
 	m_cuda->reset_callback().set(FUNC(pmac6200_state::cuda_reset_w));
 	m_cuda->linechange_callback().set(m_adbbus, FUNC(adb_bus_device::adb_host_line_w));
 	m_cuda->via_clock_callback().set(m_primetimeii, FUNC(primetime_device::cb1_w));
@@ -242,36 +267,25 @@ void pmac6200_state::pmac6200(machine_config &config)
 	m_ram->set_extra_options("8M,16M,32M,64M"); // per service manual
 }
 
-#define PPC_MAKE_BRANCH_ALWAYS(x) \
-	ROM_FILL(x,   1, 0x48) \
-	ROM_FILL(x+1, 1, 0x00) \
-	// .
 
-#define PPC_ASSEMBLE_NOP(x) \
-	ROM_FILL(x,   1, 0x7f) \
-	ROM_FILL(x+1, 1, 0xff) \
-	ROM_FILL(x+2, 1, 0xfb) \
-	ROM_FILL(x+3, 1, 0x78) \
-	// .
+void pmac6200_state::pmac5200(machine_config &config)
+{
+	pmac6200(config);
+
+	m_model_id = 0xa55a3258;
+}
 
 ROM_START( pmac6200 )
 	// bootrom is on the 64-bit PowerPC bus, so it should be loaded in a 64-bit space
 	ROM_REGION64_BE(0x400000, "bootrom64", 0)
 	ROM_LOAD( "63abfd3f.bin", 0x000000, 0x400000, CRC(2f47a6ea) SHA1(0b34d7c692594695b39719c3bf21808985f89f2c) )
-
-	// HACK: the bootrom tells the Capella to map in cache/tag RAMs and then tests them, failing if they're bad.
-	// we skip these tests for now; if it turns out these are never touched again,
-	// then these hacks can probably stay here...
-	PPC_MAKE_BRANCH_ALWAYS(0x3051b0) // skip checksum mismatch panic
-	PPC_ASSEMBLE_NOP(0x30529c)       // NOP out call to cache/tag RAM tests
-	PPC_MAKE_BRANCH_ALWAYS(0x3052a4) // avoid panic case after patched-out routine
-
-	// this is here to keep the F108 happy
-	// TODO: confirm on real hardware if the 68k side can see the bootrom
-	ROM_REGION32_BE(0x400000, "bootrom", 0)
-	ROM_FILL(0, 0x400000, 0)
 ROM_END
 
 } // anonymous namespace
 
-COMP( 1995, pmac6200, 0, 0, pmac6200, macadb, pmac6200_state, init_pmac6200,  "Apple Computer", "Power Macintosh 6200/75", MACHINE_NOT_WORKING)
+
+#define rom_pmac5200 rom_pmac6200
+
+//    YEAR  NAME      PARENT    COMPAT  MACHINE   INPUT   CLASS           INIT            COMPANY           FULLNAME                   FLAGS
+COMP( 1995, pmac6200, 0,        0,      pmac6200, macadb, pmac6200_state, init_pmac6200,  "Apple Computer", "Power Macintosh 6200/75", MACHINE_NOT_WORKING)
+COMP( 1995, pmac5200, pmac6200, 0,      pmac5200, macadb, pmac6200_state, init_pmac6200,  "Apple Computer", "Power Macintosh 5200/75", MACHINE_NOT_WORKING)

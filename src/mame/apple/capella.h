@@ -18,10 +18,14 @@ public:
 
 	template <typename... T> void set_maincpu_tag(T &&... args) { m_maincpu.set_tag(std::forward<T>(args)...); }
 
+
 	// 68040-style interrupt priority level from the I/O controller (1-7, anything else = no interrupt)
 	void translate_ipl_state_change(int ipl);
+
 	// NMI (programmer's switch / Cuda), presented as IPL 7
 	void nmi_w(int state);
+
+	void reset_w(offs_t offset, u64 data);
 
 	u64 ctrl_r(offs_t offset);
 	void ctrl_w(offs_t offset, u64 data);
@@ -33,6 +37,11 @@ public:
 
 	u64 irq_ack_r(offs_t offset);
 	void irq_ack_w(offs_t offset, u64 data);
+
+	u64 l2_data_r(offs_t offset);
+	void l2_data_w(offs_t offset, u64 data, u64 mem_mask);
+	u64 l2_tag_r(offs_t offset);
+	void l2_tag_w(offs_t offset, u64 data, u64 mem_mask);
 
 protected:
 	// device-level overrides
@@ -50,6 +59,8 @@ private:
 	u8 m_nmi;           // NMI input state
 	u8 m_ipl;           // level currently presented to the CPU (0 = none)
 	bool m_irq_pending; // IPL change latched, CPU interrupt asserted
+	u64 m_l2_data[0x8000];
+	u8 m_l2_tag[0x8000];
 };
 
 // device type definition
