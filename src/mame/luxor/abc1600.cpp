@@ -697,7 +697,7 @@ INPUT_PORTS_END
 
 void abc1600_state::update_br()
 {
-	// _BR = !_DMADIS || (_DBRQ0 || _DBRQ1 || _DBRQ2)
+	// _BR = !_DMADIS || (_DBRQ0 || _DBRQ1 || _DBRQ2)
 	// _IOC = IORQ delayed by 1 clock, or IORQ preceded by 1 clock on MINT2 or MINT5
 	// _BGACK = !_BR && !_BG && _IOC
 	// DMA0.BAI = _BGACK
@@ -913,7 +913,7 @@ uint8_t abc1600_state::cio_pc_r()
 	uint8_t data = 0x0d;
 
 	// data in
-	data |= (m_rtc->dio_r() || m_nvram->do_read()) << 1;
+	data |= (m_rtc->dio_r() && m_nvram->do_read()) << 1;
 
 	return data;
 }
@@ -1141,7 +1141,7 @@ void abc1600_state::abc1600(machine_config &config)
 
 	EEPROM_93C06_16BIT(config, m_nvram);
 
-	E0516(config, m_rtc, XTAL(32'768));
+	E0516(config, m_rtc, XTAL(32'768)).set_use_utc(true);
 	m_rtc->outsel_rd_cb().set_constant(0);
 
 	FD1797(config, m_fdc, XTAL(64'000'000)/64); // clocked by 9229B
